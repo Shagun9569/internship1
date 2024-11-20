@@ -1,0 +1,55 @@
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error
+
+# Example dataset
+data = {
+    "Genre": ["Action", "Comedy", "Drama", "Action", "Comedy"],
+    "Director": ["Director A", "Director B", "Director C", "Director A", "Director B"],
+    "Actors": ["Actor 1, Actor 2", "Actor 3, Actor 4", "Actor 1, Actor 5", "Actor 2, Actor 6", "Actor 3, Actor 7"],
+    "Rating": [7.5, 6.8, 8.2, 7.0, 6.5]
+}
+
+# Convert to DataFrame
+df = pd.DataFrame(data)
+
+# Define features and target
+X = df[["Genre", "Director", "Actors"]]
+y = df["Rating"]
+
+# Preprocessing: OneHotEncoding for categorical features
+preprocessor = ColumnTransformer(
+    transformers=[
+        ("encoder", OneHotEncoder(handle_unknown="ignore"), ["Genre", "Director", "Actors"])
+    ]
+)
+
+# Split dataset into train and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Fit the preprocessor and transform features
+X_train_encoded = preprocessor.fit_transform(X_train)
+X_test_encoded = preprocessor.transform(X_test)
+
+# Model: Random Forest Regressor
+model = RandomForestRegressor(n_estimators=100, random_state=42)
+model.fit(X_train_encoded, y_train)
+
+# Predict and evaluate
+y_pred = model.predict(X_test_encoded)
+mse = mean_squared_error(y_test, y_pred)
+
+print(f"Mean Squared Error: {mse:.2f}")
+
+# Predict a new example
+new_movie = pd.DataFrame({
+    "Genre": ["Action"],
+    "Director": ["Director A"],
+    "Actors": ["Actor 1, Actor 2"]
+})
+new_movie_encoded = preprocessor.transform(new_movie)
+predicted_rating = model.predict(new_movie_encoded)
+print(f"Predicted Rating for the new movie: {predicted_rating[0]:.2f}")
